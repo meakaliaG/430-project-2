@@ -17,9 +17,34 @@ const saltRounds = 10;
 
 let AccountModel = {};
 
-/* Our schema defines the data we will store. A username (string of alphanumeric
-   characters), a password (actually the hashed version of the password created
-   by bcrypt), and the created date.
+/* Subscription tier limits configuration */
+const TIER_LIMITS = {
+  free: {
+    maxRooms: 2,
+    maxParticipants: 5,
+    canvasPersistenceDays: 1,
+  },
+  pro: {
+    maxRooms: 10,
+    maxParticipants: 15,
+    canvasPersistenceDays: 30,
+  },
+  // unlimited !!!
+  enterprise: {
+    maxRooms: -1,
+    maxParticipants: -1,
+    canvasPersistenceDays: -1, 
+  },
+};
+
+/* Account schema defines the data stored. 
+  username: string of alphanumeric characters
+  email: string; lowercase
+  password: the hashed version of the password created by bcrypt
+  subscriptionTier: String from enum array
+  roomsCreated: Number
+  createdDate: Date
+  lastLogin: Date
 */
 const AccountSchema = new mongoose.Schema({
   username: {
@@ -29,11 +54,34 @@ const AccountSchema = new mongoose.Schema({
     unique: true,
     match: /^[A-Za-z0-9_\-.]{1,16}$/,
   },
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true,
+    lowercase: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  },
   password: {
     type: String,
     required: true,
   },
+  subscriptionTier: {
+    type: String,
+    required: true,
+    enum: ['free', 'pro', 'enterprise'],
+    default: 'free',
+  },
+  roomsCreated: {
+    type: Number, 
+    default: 0,
+    min: 0,
+  },
   createdDate: {
+    type: Date,
+    default: Date.now,
+  },
+  lastLogin: {
     type: Date,
     default: Date.now,
   },
@@ -42,6 +90,9 @@ const AccountSchema = new mongoose.Schema({
 // Converts a doc to something we can store in redis later on.
 AccountSchema.statics.toAPI = (doc) => ({
   username: doc.username,
+  email: doc.email,
+  subscriptionTier: doc.subscriptionTier,
+  roomsCreated: doc.roomsCreated,
   _id: doc._id,
 });
 
