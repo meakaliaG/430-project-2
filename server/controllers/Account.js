@@ -1,8 +1,12 @@
 const models = require('../models');
-const Account = models.Account;
+const { Account } = models;
 
 const loginPage = (req, res) => {
     return res.render('login');
+};
+
+const passwordChangePage = (req, res) => {
+    res.render('changePassword');
 };
 
 const logout = (req, res) => {
@@ -25,34 +29,88 @@ const login = (req, res) => {
 
         req.session.account = Account.toAPI(account);
 
-        return res.json({redirect: '/maker'});
+        return res.json({redirect: '/dashboard'});
     });
 };
 
 const signup = async (req, res) => {
     const username = `${req.body.username}`;
+    const email = `${req.body.email}`;
     const pass = `${req.body.pass}`;
     const pass2 = `${req.body.pass2}`;
 
-    if (!username || !pass || !pass2) {
+    if (!username || !email || !pass || !pass2) {
         return res.status(400).json({error: 'All fields are required!'});
     }
     if (pass !== pass2) {
         return res.status(400).json({error: 'Passwords do not match!'});
     }
 
+    // email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({error: 'Invalid email address'});
+    }
+
     try {
         const hash = await Account.generateHash(pass);
-        const newAccount = new Account({username, password: hash});
+        const newAccount = new Account({
+            username,
+            email,
+            password: hash,
+            subscriptionTier: 'free',
+        });
         await newAccount.save();
         req.session.account = Account.toAPI(newAccount);
-        return res.json({redirect: '/maker'});
+        return res.json({redirect: '/dashboard'});
     } catch (err) {
         console.log(err);
         if(err.code === 11000) {
+            // determine which field triggered duplicate key error
+            if (err.keyPattern && err.keyPattern.email) {
+                return res.status(400).json({error: 'Email already in use!'});
+            }
             return res.status(400).json({error: 'Username already in use!'});
         }
         return res.status(500).json({error: 'An error occured.'});
+    }
+};
+
+/**
+ * Change user password
+ */
+const changePassword = async (req, res) => {
+    const currentPass = `${req.body.currentPass}`;
+    const newPass = `${req.body.newPass}`;
+    const newPass2 = `${req.body.newPass2}`;
+
+    if (!currentPass || !newPass || !newPass2) {
+        return res.status(400).json({error: 'All fields are required'});
+    }
+
+    if (newPass !== newPass2) {
+        return res.status(400).json({error: 'New passwords do not match'});
+    }
+
+    if (newPass.length < 8) {
+        return res.status(400).json({error: 'Password must be at least 8 characters'});
+    }
+
+    try {
+        const result = await Account.changePassword(
+            req.session.account._id,
+            currentPass,
+            newPass,
+        );
+
+        if (result.error) {
+            return res.status(400).json({error: result.error});
+        }
+
+        return res.json({message: 'Password changed successfully'});
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({error: 'An error occurred changing password'});
     }
 };
 

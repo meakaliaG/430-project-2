@@ -115,6 +115,8 @@ AccountSchema.statics.authenticate = async (username, password, callback) => {
 
     const match = await bcrypt.compare(password, doc.password);
     if (match) {
+      doc.lastLogin = Date.now();
+      await doc.save();
       return callback(null, doc);
     }
     return callback();
@@ -122,6 +124,41 @@ AccountSchema.statics.authenticate = async (username, password, callback) => {
     return callback(err);
   }
 };
+
+/*
+  Helper function to change a user's password
+*/
+AccountSchema.statics.changePassword = async (accountId, oldPassword, newPassword) => {
+  try {
+    const doc = await AccountModel.findById(accountId).exec();
+    if (!doc) {
+      return {error: 'Account not found'};
+    }
+
+    const match = await bcrypt.compare(oldPassword, doc.password);
+    if (!match) {
+      return {error: 'Current password is incorrect'};
+    }
+
+    const hash = await AccountModel.generateHash(newPassword);
+    doc.password = hash;
+    await doc.save();
+    return {success: true};
+  } catch (err) {
+    return {error: 'An error occurred changing your password'};
+  }
+};
+
+/**
+ * Get subscription tier information
+ */
+const getSubscriptionInfo = (req, res) => {
+  const tiers = {
+    // there will be free, pro, enterprise
+    // differing limits to rooms created/participants to a room
+    // more drawing tools if implemented
+  }
+}
 
 AccountModel = mongoose.model('Account', AccountSchema);
 module.exports = AccountModel;
