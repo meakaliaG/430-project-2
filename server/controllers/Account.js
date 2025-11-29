@@ -1,19 +1,35 @@
+/**
+ * Account Controller - Handles user authentication, registration,
+ * password management, and subscription upgrades
+ */
 const models = require('../models');
 const { Account } = models;
 
+/**
+ * Render login page
+ */
 const loginPage = (req, res) => {
     return res.render('login');
 };
 
+/**
+ * Render password change page
+ */
 const passwordChangePage = (req, res) => {
     res.render('changePassword');
 };
 
+/**
+ * Handle user logout - destroys session and redirects to login
+ */
 const logout = (req, res) => {
     req.session.destroy();
     return res.redirect('/');
 };
 
+/**
+ * Authenticate user login credentials
+ */
 const login = (req, res) => {
     const username = `${req.body.username}`;
     const pass = `${req.body.pass}`;
@@ -33,6 +49,9 @@ const login = (req, res) => {
     });
 };
 
+/**
+ * Create new user account
+ */
 const signup = async (req, res) => {
     const username = `${req.body.username}`;
     const email = `${req.body.email}`;
