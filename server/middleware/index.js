@@ -73,8 +73,11 @@ const checkRoomLimit = async (req, res, next) => {
 };
 
 
+
 module.exports.requiresLogin = requiresLogin;
 module.exports.requiresLogout = requiresLogout;
+module.exports.checkRoomLimit = checkRoomLimit;
+
 
 if(process.env.NODE_ENV === 'production') {
     module.exports.requiresSecure = requiresSecure;

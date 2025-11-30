@@ -133,9 +133,40 @@ const changePassword = async (req, res) => {
     }
 };
 
+/**
+ * Get account information 
+ * */
+const getAccount = async (req, res) => {
+    try {
+      const account = await Account.findById(req.session.account._id)
+        .select('username email subscriptionTier roomsCreated createdDate lastLogin')
+        .lean()
+        .exec();
+  
+      if (!account) {
+        return res.status(404).json({ error: 'Account not found.' });
+      }
+  
+      // Get tier limits
+      const limits = Account.getTierLimits(account.subscriptionTier);
+  
+      return res.json({
+        account: {
+          ...account,
+          limits,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: 'Error retrieving account information.' });
+    }
+};
+
 module.exports = {
     loginPage,
     login,
     logout,
     signup,
+    getAccount,
+    changePassword,
 };
