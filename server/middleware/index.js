@@ -49,8 +49,29 @@ const bypassSecure = (req, res, next) => {
  * -- based on subscription tier
  */
 const checkRoomLimit = async (req, res, next) => {
+    try {
+        const account = await Account.findById(req.session.account._id).exec();
 
-}
+        if (!account) {
+            return res.status(404).json({error: 'Account not found.'});
+        }
+
+        if (!account.canCreateRoom()) {
+            const limits = Account.getTierLimits(account.subscriptionTier);
+            return res.status(403).json({
+                error: `Room limit reached. ${account.subscriptionTier} tier allows a max of ${limits.maxRooms} rooms.`,
+                upgradeRequired: true,
+            });
+        }
+
+        req.account = account;
+        return next();
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({error: 'Error checking room limit'});
+    }
+};
+
 
 module.exports.requiresLogin = requiresLogin;
 module.exports.requiresLogout = requiresLogout;
