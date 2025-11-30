@@ -150,15 +150,77 @@ AccountSchema.statics.changePassword = async (accountId, oldPassword, newPasswor
 };
 
 /**
- * Get subscription tier information
+ * Get limits for a given subscription tier
  */
-const getSubscriptionInfo = (req, res) => {
-  const tiers = {
-    // there will be free, pro, enterprise
-    // differing limits to rooms created/participants to a room
-    // more drawing tools if implemented
+AccountSchema.statics.getTierLimits = (tier) => TIER_LIMITS[tier] || TIER_LIMITS.free;
+
+/** 
+ * Check account tier limits
+ */
+AccountSchema.methods.canCreateRoom = function canCreateRoom() {
+  const limits = TIER_LIMITS[this.subscriptionTier];
+  if (limits.maxRooms === -1) return true; //enterprise
+  return this.roomsCreated < limits.maxRooms;
+};
+
+/**
+ * Helper returns remaining room slots for given account
+ */
+AccountSchema.methods.getRemainingRoomSlots = function getRemainingRoomSlots() {
+  const limits = TIER_LIMITS[this.subscriptionTier];
+  if (limits.maxRooms === -1) return -1; //enterprise
+  return Math.max(0, limits.maxRooms - this.roomsCreated);
+};
+
+/** 
+ * Helper returns max number of participants based on account
+ * subscription tier
+ */
+AccountSchema.methods.getMaxParticipants = function getMaxParticipants() {
+  const limits = TIER_LIMITS[this.subscriptionTier];
+  return limits.maxParticipants;
+};
+
+/**
+ * Increment given account room count
+ */
+AccountSchema.methods.incrementRoomCount = async function incrementRoomCount() {
+  this.roomsCreated += 1;
+  return this.save();
+};
+
+/**
+ * Decrement given account room count
+ */
+AccountSchema.methods.decrementRoomCount = async function decrementRoomCount() {
+  if (this.roomsCreated > 0) {
+    this.roomsCreated -= 1;
+    return this.save();
   }
-}
+  return this;
+};
+
+/**
+ * Upgrade given account subscription tier
+ */
+AccountSchema.statics.upgradeSubscription = async (accountId, newTier) => {
+  try {
+    if (!['free', 'pro', 'enterprise'].includes(newTier)) {
+      return {error: 'Invalid subscription tier'};
+    }
+
+    const doc = await AccountModel.findById(accountId).exec();
+    if (!doc) {
+      return {error: 'Account not found!'};
+    }
+
+    doc.subscriptionTier = newTier;
+    await doc.save();
+    return {success: true, account: AccountModel.toAPI(doc)};
+  } catch (err) {
+    return {error: 'An error occurred upgrading subscription.'};
+  }
+};
 
 AccountModel = mongoose.model('Account', AccountSchema);
 module.exports = AccountModel;
