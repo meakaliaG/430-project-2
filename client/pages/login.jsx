@@ -127,12 +127,16 @@ const init = () => {
 
   loginButton.addEventListener('click', (e) => {
     e.preventDefault();
+    loginButton.classList.add('active');
+    signupButton.classList.remove('active');
     root.render(<LoginWindow />);
     return false;
   });
 
   signupButton.addEventListener('click', (e) => {
     e.preventDefault();
+    signupButton.classList.add('active');
+    loginButton.classList.remove('active');
     root.render(<SignupWindow />);
     return false;
   });

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CoCanvas - Room</title>
+  <link rel="shortcut icon" href="/assets/img/favicon.png"/>
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body class="room-page">
+  <nav class="room-nav">
+    <div class="nav-left">
+      <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+      <h2 id="roomName" class="room-name">Loading...</h2>
+    </div>
+    <div class="nav-right">
+      <span id="roomCode" class="room-code">------</span>
+      <a href="/logout" class="nav-link">Logout</a>
+    </div>
+  </nav>
+
+  <main class="room-main">
+    <section id="app">
+        
+    </section>
+  </main>
+
+  <div id="messageArea" class="message-area hidden">
+    <p id="errorMessage" class="error-message"></p>
+  </div>
+
+  <script src="/assets/roomBundle.js"></script>
+</body>
+</html>

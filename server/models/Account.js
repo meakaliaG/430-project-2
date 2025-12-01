@@ -22,18 +22,15 @@ const TIER_LIMITS = {
   free: {
     maxRooms: 2,
     maxParticipants: 5,
-    canvasPersistenceDays: 1,
   },
   pro: {
     maxRooms: 10,
     maxParticipants: 15,
-    canvasPersistenceDays: 30,
   },
   // unlimited !!!
   enterprise: {
     maxRooms: -1,
     maxParticipants: -1,
-    canvasPersistenceDays: -1, 
   },
 };
 

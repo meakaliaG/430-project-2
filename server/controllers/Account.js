@@ -169,4 +169,5 @@ module.exports = {
     signup,
     getAccount,
     changePassword,
+    passwordChangePage,
 };

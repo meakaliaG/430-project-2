@@ -2,8 +2,9 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        app: './client/pages/dashboard.jsx',
         login: './client/pages/login.jsx',
+        dashboard: './client/pages/dashboard.jsx',
+        room: './client/pages/room.jsx',
     },
     module: {
         rules: [

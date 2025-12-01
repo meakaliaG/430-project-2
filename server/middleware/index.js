@@ -72,12 +72,122 @@ const checkRoomLimit = async (req, res, next) => {
     }
 };
 
+/**
+ *  Require user to be participant in room 
+ * */
+const requiresInRoom = async (req, res, next) => {
+    try {
+      const { code } = req.params;
+  
+      if (!code) {
+        return res.status(400).json({ error: 'Room code is required.' });
+      }
+  
+      const room = await Room.findByCode(code);
+  
+      if (!room) {
+        return res.status(404).json({ error: 'Room not found.' });
+      }
+  
+      if (!room.isActive) {
+        return res.status(410).json({ error: 'This room is no longer active.' });
+      }
+  
+      const userId = req.session.account._id;
+  
+      // check if user is participant or owner
+      if (!room.hasParticipant(userId) && room.owner.toString() !== userId.toString()) {
+        return res.status(403).json({ error: 'Access denied. Must be in room.' });
+      }
+  
+      // attach room to request
+      req.room = room;
+      return next();
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: 'Error verifying room access.' });
+    }
+};
+  
+  /* 
+  * Require user to be owner of room 
+  */
+  const requiresOwner = async (req, res, next) => {
+    try {
+      const { code } = req.params;
+  
+      if (!code) {
+        return res.status(400).json({ error: 'Room code is required.' });
+      }
+  
+      const room = await Room.findByCode(code);
+  
+      if (!room) {
+        return res.status(404).json({ error: 'Room not found.' });
+      }
+  
+      const userId = req.session.account._id;
+  
+      if (room.owner._id.toString() !== userId.toString()) {
+        return res.status(403).json({ error: 'Access denied. Must be room owner.' });
+      }
+  
+      // attach room to request
+      req.room = room;
+      return next();
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: 'Error verifying room ownership.' });
+    }
+  };
+  
+/* 
+* Check if room is at capacity before allowing join 
+*/
+const checkRoomCapacity = async (req, res, next) => {
+try {
+    const { code } = req.params;
 
+    if (!code) {
+    return res.status(400).json({ error: 'Room code is required.' });
+    }
 
+    const room = await Room.findByCode(code);
+
+    if (!room) {
+    return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    if (!room.isActive) {
+    return res.status(410).json({ error: 'This room is no longer active.' });
+    }
+
+    const userId = req.session.account._id;
+
+    if (room.hasParticipant(userId)) {
+    req.room = room;
+    return next();
+    }
+
+    if (room.isFull()) {
+    return res.status(403).json({ error: 'Room is at maximum capacity.' });
+    }
+
+    // attach room to request
+    req.room = room;
+    return next();
+} catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: 'Error checking room capacity.' });
+}
+};
+  
 module.exports.requiresLogin = requiresLogin;
 module.exports.requiresLogout = requiresLogout;
 module.exports.checkRoomLimit = checkRoomLimit;
-
+module.exports.requiresInRoom = requiresInRoom;
+module.exports.requiresOwner = requiresOwner;
+module.exports.checkRoomCapacity = checkRoomCapacity;
 
 if(process.env.NODE_ENV === 'production') {
     module.exports.requiresSecure = requiresSecure;

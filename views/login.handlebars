@@ -1,26 +1,32 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>CoCanvas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CoCanvas - Login</title>
   <link rel="shortcut icon" href="/assets/img/favicon.png"/>
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
-<body> 
-  <nav>
-    <a href="/login"><img id="logo" src="/assets/img/face.png" alt="face logo"/></a>
-    <div class="navlink"><a id="loginButton" href="/login">Login</a></div>
-    <div class="navlink"><a id="signupButton" href="/signup">Sign up</a></div>
-  </nav>
-  
-  <section id="content">
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1 class="logo">CoCanvas</h1>
+      <p class="tagline">Real-time collaborative whiteboard</p>
+    </div>
 
-  </section>
+    <nav class="auth-nav">
+      <button id="loginButton" class="nav-button active">Login</button>
+      <button id="signupButton" class="nav-button">Sign Up</button>
+    </nav>
+    
+    <section id="content" class="auth-content">
+    </section>
 
-  <div id="message" class="message hidden">
-    <div class="message-content">
-      <span id="errorMessage"></span>
+    <div id="messageArea" class="message-area hidden">
+      <p id="errorMessage" class="error-message"></p>
     </div>
   </div>
+
   <script src="/assets/loginBundle.js"></script>
 </body>
 </html>
