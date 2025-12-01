@@ -212,46 +212,28 @@ RoomSchema.methods.saveCanvas = async function saveCanvas(canvasData) {
 /**
  * Retrieve rooms owned by a given account
  */
-RoomSchema.statics.findByOwner = async (ownerId) => {
-    try {
-      const rooms = await RoomModel.find({ owner: ownerId })
+RoomSchema.statics.findByOwner = (ownerId) =>
+    RoomModel.find({ owner: ownerId })
         .sort({ lastActivity: -1 })
         .exec();
-      return rooms;
-    } catch (err) {
-      throw err;
-    }
-};
 
 /**
  * Retrieve all public active rooms 
  */
-RoomSchema.statics.findPublicRooms = async (limit = 50) => {
-    try {
-      const rooms = await RoomModel.find({ isPublic: true, isActive: true })
+RoomSchema.statics.findPublicRooms = (limit = 50) =>
+    RoomModel.find({ isPublic: true, isActive: true })
         .sort({ lastActivity: -1 })
         .limit(limit)
         .populate('owner', 'username')
         .exec();
-      return rooms;
-    } catch (err) {
-      throw err;
-    }
-  };
   
   /**
    * Find room by code 
    */
-  RoomSchema.statics.findByCode = async (roomCode) => {
-    try {
-      const room = await RoomModel.findOne({ roomCode: roomCode.toUpperCase() })
+  RoomSchema.statics.findByCode = (roomCode) =>
+    RoomModel.findOne({ roomCode: roomCode.toUpperCase() })
         .populate('owner', 'username subscriptionTier')
         .exec();
-      return room;
-    } catch (err) {
-      throw err;
-    }
-  };
 
   RoomModel = mongoose.model('Room', RoomSchema);
   module.exports = RoomModel;

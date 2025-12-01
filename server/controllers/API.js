@@ -3,7 +3,7 @@
  */
 const models = require('../models');
 
-const {Room, DrawingSession, Account} = models;
+const {Room, DrawingSession} = models;
 
 /**
  * Get all rooms created by current user

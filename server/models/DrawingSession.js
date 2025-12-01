@@ -6,6 +6,8 @@
 
 const mongoose = require('mongoose');
 
+let DrawingSessionModel = {};
+
 let DrawingSessionSchema = new mongoose.Schema({
     room: {
         type: mongoose.Schema.ObjectId,
@@ -55,40 +57,31 @@ DrawingSessionSchema.statics.toAPI = (doc) => ({
  * Create new drawing session when user joins a room
  */
 DrawingSessionSchema.statics.createSession = async (roomId, participantId) => {
-    try {
+
         const session = new DrawingSessionModel({
             room: roomId,
             participant: participantId,
             joinedAt: Date.now(),
         });
-        await session.save();
-        return session;
-    } catch (err) {
-        throwErr;
-    }
+        return session.save();
 };
 
 /**
  * End drawing session when user leaves room
  */
 DrawingSessionSchema.statics.endSession = async (roomId, participantId) => {
-    try {
-        const session = await DrawingSessionModel.findOne({
-            room: roomId,
-            participant: participantId,
-            leftAt: null,
-        }).exec();
-        if (session) {
-            session.leftAt = Date.now();
-            // duration in seconds
-            session.sessionDuration = Math.floor((session.leftAt - session.joinedAt) / 1000);
-            await session.save();
-            return session;
-        }
-        return null;
-    } catch (err) {
-        throw err;
-    }
+    const session = await DrawingSessionModel.findOne({
+        room: roomId,
+        participant: participantId,
+        leftAt: null,
+    }).exec();
+
+    if (!session) return null;
+
+    session.leftAt = Date.now();
+    session.sessionDuration = Math.floor((session.leftAt - session.joinedAt) / 1000);
+
+    return session.save();
 };
 
 
