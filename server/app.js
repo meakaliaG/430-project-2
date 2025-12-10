@@ -9,12 +9,14 @@ const helmet = require('helmet');
 const session = require('express-session');
 const RedisStore = require('connect-redis').RedisStore;
 const redis = require('redis');
+const http = require('http');
 
 const router = require('./router.js');
+const socketHandler = require('./socketHandler.js')
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
-const dbURI = process.env.MONGODB_URI || 'mongodb://localhost/DomoMaker';
+const dbURI = process.env.MONGODB_URI || 'mongodb://localhost/CoCanvas';
 mongoose.connect(dbURI).catch((err) => {
     if(err) {
         console.log('Could not connect to database');
@@ -26,14 +28,19 @@ const redisClient = redis.createClient({
     url: process.env.REDISCLOUD_URL,
 });
 
-redisClient.on('err', err => console.log('Redis Client Error', err));
+redisClient.on('error', err => console.log('Redis Client Error', err));
 
 redisClient.connect().then(() => {
     const app = express();
+    const server = http.createServer(app);
 
-    app.use(helmet());
+    socketHandler.setupSockets(server);
+
+    app.use(helmet({
+        contentSecurityPolicy: false,
+    }));
     app.use('/assets', express.static(path.resolve(`${__dirname}/../hosted`)));
-    app.use(favicon(`${__dirname}/../hosted/img/favicon.png`));
+    app.use(favicon(`${__dirname}/../hosted/img/lilGuy.png`));
     app.use(compression());
     app.use(express.urlencoded({extended: true}));
     app.use(express.json());
@@ -43,46 +50,19 @@ redisClient.connect().then(() => {
         store: new RedisStore({
             client: redisClient,
         }),
-        secret: 'Domo Arigato',
+        secret: process.env.SESSION_SECRET || 'CoCanvas Secret Key',
         resave: false,
         saveUninitialized: false,
     }));
 
-    app.engine('handlebars', expressHandlebars.engine({ defaultLayout: ''}));
+    app.engine('handlebars', expressHandlebars.engine({defaultLayout: ''}));
     app.set('view engine', 'handlebars');
     app.set('views', `${__dirname}/../views`);
 
     router(app);
 
-    app.listen(port, (err) => {
-        if(err) { throw err }
+    server.listen(port, (err) => {
+        if(err) {throw err;}
         console.log(`Listening on port ${port}`);
     });
 });
-
-// const app = express();
-
-// app.use(helmet());
-// app.use('/assets', express.static(path.resolve(`${__dirname}/../hosted`)));
-// app.use(favicon(`${__dirname}/../hosted/img/favicon.png`));
-// app.use(compression());
-// app.use(express.urlencoded({extended: true}));
-// app.use(express.json());
-
-// app.use(session({
-//     key: 'sessionid',
-//     secret: 'Domo Arigato',
-//     resave: false,
-//     saveUninitialized: false,
-// }));
-
-// app.engine('handlebars', expressHandlebars.engine({ defaultLayout: ''}));
-// app.set('view engine', 'handlebars');
-// app.set('views', `${__dirname}/../views`);
-
-// router(app);
-
-// app.listen(port, (err) => {
-//     if(err) { throw err }
-//     console.log(`Listening on port ${port}`);
-// });

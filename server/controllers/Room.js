@@ -1,10 +1,10 @@
 /* Room Controller - Handles room creation, management, and access control */
 const models = require('../models');
 
-const { Room, Account, DrawingSession } = models;
+const { Room, Account } = models;
 
 /* 
-*Render the dashboard page 
+* Render the dashboard page 
 */
 const dashboardPage = (req, res) => res.render('dashboard');
 
@@ -161,8 +161,6 @@ const joinRoom = async (req, res) => {
 
     await room.addParticipant(userId);
 
-    await DrawingSession.createSession(room._id, userId);
-
     return res.json({
       message: 'Joined room successfully!',
       room: Room.toAPI(room),
@@ -189,8 +187,6 @@ const leaveRoom = async (req, res) => {
     const userId = req.session.account._id;
 
     await room.removeParticipant(userId);
-
-    await DrawingSession.endSession(room._id, userId);
 
     return res.json({ message: 'Left room successfully.' });
   } catch (err) {

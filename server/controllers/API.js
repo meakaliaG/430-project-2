@@ -3,7 +3,7 @@
  */
 const models = require('../models');
 
-const {Room, DrawingSession} = models;
+const { Room } = models;
 
 /**
  * Get all rooms created by current user
@@ -40,6 +40,10 @@ const getPublicRooms = async (req, res) => {
       return res.status(500).json({ error: 'Error retrieving public rooms.' });
     }
   };
+
+  /**
+   * Get active sessions for current user
+   */
   
   /* 
   * Get participants in a room 
@@ -48,78 +52,43 @@ const getPublicRooms = async (req, res) => {
     const { code } = req.params;
   
     try {
-      const room = await Room.findByCode(code);
+      const room = await Room.findOne({ roomCode: code.toUpperCase() })
+        .populate('currentParticipants', 'username')
+        .populate('owner', 'username')
+        .exec();
   
       if (!room) {
         return res.status(404).json({ error: 'Room not found.' });
       }
   
-      const userId = req.session.account._id;
+      const userId = req.session.account._id.toString();
   
-      if (!room.hasParticipant(userId) && room.owner._id.toString() !== userId.toString()) {
+      // Verify user is in room or is owner
+      const isParticipant = room.currentParticipants.some(
+        (p) => p._id.toString() === userId
+      );
+      const isOwner = room.owner._id.toString() === userId;
+  
+      if (!isParticipant && !isOwner) {
         return res.status(403).json({ error: 'Access denied. Must be in room.' });
       }
   
-      const activeSessions = await DrawingSession.getActiveSessionsByRoom(room._id);
-  
-      const participants = activeSessions.map((session) => ({
-        username: session.participant.username,
-        userId: session.participant._id,
-        joinedAt: session.joinedAt,
-        contributionCount: session.contributionCount,
+      // Format participant data
+      const participantsData = room.currentParticipants.map((participant) => ({
+        username: participant.username,
+        userId: participant._id,
+        contributionCount: 0, // Simplified - no tracking
       }));
   
-      return res.json({ participants });
+      return res.json({ participants: participantsData });
     } catch (err) {
       console.log(err);
       return res.status(500).json({ error: 'Error retrieving room participants.' });
     }
-  };
+};
   
-  /* 
-  * Search rooms by name or code 
-  */
-//   const searchRooms = async (req, res) => {
-//     const { query } = req.query;
-  
-//     if (!query) {
-//       return res.status(400).json({ error: 'Search query is required.' });
-//     }
-  
-//     try {
-//       const searchRegex = new RegExp(query, 'i'); // case-insensitive
-  
-//       const rooms = await Room.find({
-//         isPublic: true,
-//         isActive: true,
-//         $or: [
-//           { name: searchRegex },
-//           { roomCode: query.toUpperCase() },
-//         ],
-//       })
-//         .limit(20)
-//         .populate('owner', 'username')
-//         .exec();
-  
-//       const roomsData = rooms.map((room) => ({
-//         ...Room.toAPI(room),
-//         ownerUsername: room.owner.username,
-//       }));
-  
-//       return res.json({ rooms: roomsData });
-//     } catch (err) {
-//       console.log(err);
-//       return res.status(500).json({ error: 'Error searching rooms.' });
-//     }
-//   };
-  
-  module.exports = {
-    getMyRooms,
-    getPublicRooms,
-    // getActiveSessions,
-    // getUserStats,
-    // getRoomStats,
-    // getSessionHistory,
-    getRoomParticipants,
-    //searchRooms,
-  };
+module.exports = {
+  getMyRooms,
+  getPublicRooms,
+  getRoomParticipants,
+};

@@ -11,10 +11,11 @@ const router = (app) => {
 
     app.get('/logout', mid.requiresLogin, controllers.Account.logout);
 
-    app.get('/change-password', mid.requiresLogin, controllers.Account.getAccount);
+    app.get('/change-password', mid.requiresLogin, controllers.Account.passwordChangePage);
     app.post('/change-password', mid.requiresLogin, controllers.Account.changePassword);
 
     app.get('/account', mid.requiresLogin, controllers.Account.getAccount);
+    app.post('/upgrade', mid.requiresLogin, controllers.Account.upgradeSubscription);
   
     // --- Room Routes ---
     app.get('/dashboard', mid.requiresLogin, controllers.Room.dashboardPage);
@@ -51,6 +52,11 @@ const router = (app) => {
         return res.redirect('/dashboard');
       }
       return res.redirect('/login');
+    });
+
+    // 404 handler
+    app.use((req, res) => {
+        res.status(404).render('404');
     });
 };
 

@@ -5,6 +5,7 @@ module.exports = {
         login: './client/pages/login.jsx',
         dashboard: './client/pages/dashboard.jsx',
         room: './client/pages/room.jsx',
+        settings: './client/pages/settings.jsx',
     },
     module: {
         rules: [

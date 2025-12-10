@@ -162,6 +162,35 @@ const getAccount = async (req, res) => {
     }
 };
 
+/* 
+* Upgrade subscription tier (no actual payment processing) 
+*/
+const upgradeSubscription = async (req, res) => {
+    const { tier } = req.body;
+  
+    if (!tier || !['free', 'pro', 'enterprise'].includes(tier)) {
+      return res.status(400).json({ error: 'Invalid subscription tier.' });
+    }
+  
+    try {
+      const result = await Account.upgradeSubscription(req.session.account._id, tier);
+  
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+  
+      req.session.account = result.account;
+  
+      return res.json({
+        message: `Successfully upgraded to ${tier} tier!`,
+        account: result.account,
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: 'An error occurred upgrading subscription.' });
+    }
+};
+
 module.exports = {
     loginPage,
     login,
@@ -170,4 +199,6 @@ module.exports = {
     getAccount,
     changePassword,
     passwordChangePage,
+    upgradeSubscription,
+    
 };

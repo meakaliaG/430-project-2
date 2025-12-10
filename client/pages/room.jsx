@@ -349,7 +349,18 @@ const Room = () => {
 
   useEffect(() => {
     loadRoomData();
-    initializeSocket();
+    
+    // Get username from account
+    helper.sendGet('/account').then((result) => {
+      if (result.account) {
+        setUsername(result.account.username);
+      }
+    });
+
+    // Initialize socket after getting username
+    setTimeout(() => {
+      initializeSocket();
+    }, 500);
 
     return () => {
       if (socketRef.current) {
@@ -375,37 +386,59 @@ const Room = () => {
 
       // Join the room if not already in it
       if (!result.isParticipant) {
-        await helper.sendPost(`/rooms/${roomCode}/join`, {});
+        const joinResult = await helper.sendPost(`/rooms/${roomCode}/join`, {});
+        if (joinResult.room) {
+          // Successfully joined, now load participants
+          loadParticipants();
+        }
+      } else {
+        // Already in room, load participants
+        loadParticipants();
       }
-
-      loadParticipants();
     }
     
     setLoading(false);
   };
 
   const loadParticipants = async () => {
-    const result = await helper.sendGet(`/api/rooms/${roomCode}/participants`);
-    if (result.participants) {
-      setParticipants(result.participants);
+    try {
+      const result = await helper.sendGet(`/api/rooms/${roomCode}/participants`);
+      if (result.participants) {
+        setParticipants(result.participants);
+      }
+    } catch (err) {
+      console.log('Could not load participants:', err);
+      // Don't show error to user - participants will just be empty
+      setParticipants([]);
     }
   };
 
   const initializeSocket = () => {
-    // Socket.IO will be implemented when you add the socketHandler
-    // For now, we'll create a placeholder
-    // socketRef.current = io();
-    
-    // When Socket.IO is implemented:
-    /*
+    // Initialize Socket.IO connection
     socketRef.current = io();
     
     socketRef.current.on('connect', () => {
+      console.log('Connected to Socket.IO');
       setConnected(true);
-      socketRef.current.emit('join-room', { roomCode });
+      
+      // Join the room
+      socketRef.current.emit('join-room', { 
+        roomCode,
+        username: username || 'User'
+      });
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO');
+      setConnected(false);
+    });
+
+    socketRef.current.on('room-joined', (data) => {
+      console.log('Successfully joined room:', data.roomCode);
     });
 
     socketRef.current.on('participant-joined', (data) => {
+      console.log(`${data.username} joined the room`);
       loadParticipants();
       setMessages(prev => [...prev, {
         username: 'System',
@@ -415,6 +448,7 @@ const Room = () => {
     });
 
     socketRef.current.on('participant-left', (data) => {
+      console.log(`${data.username} left the room`);
       loadParticipants();
       setMessages(prev => [...prev, {
         username: 'System',
@@ -423,10 +457,21 @@ const Room = () => {
       }]);
     });
 
-    socketRef.current.on('chat-message', (data) => {
-      setMessages(prev => [...prev, data]);
+    socketRef.current.on('participants-update', (data) => {
+      console.log('Participants updated:', data.participants);
     });
-    */
+
+    socketRef.current.on('chat-message', (data) => {
+      setMessages(prev => [...prev, {
+        username: data.username,
+        text: data.text,
+        timestamp: data.timestamp
+      }]);
+    });
+
+    socketRef.current.on('room-error', (data) => {
+      helper.handleError(data.error);
+    });
   };
 
   const handleClearCanvas = () => {

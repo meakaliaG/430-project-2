@@ -3,25 +3,6 @@ const React = require('react');
 const { useState, useEffect } = React;
 const { createRoot } = require('react-dom/client');
 
-/* Component: User Stats Card */
-const StatsCard = ({ stats }) => {
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-  };
-
-  return (
-    <div className="stats-grid">
-      <div className="stat-card">
-        <h3 className="stat-value">{stats.roomsCreated || 0}</h3>
-        <p className="stat-label">Rooms Created</p>
-      </div>
-    </div>
-  );
-};
-
 /* Component: Subscription Panel */
 const SubscriptionPanel = ({ account, onUpgrade }) => {
   const [loading, setLoading] = useState(false);
@@ -316,7 +297,6 @@ const Dashboard = () => {
   const [myRooms, setMyRooms] = useState([]);
   const [publicRooms, setPublicRooms] = useState([]);
   const [account, setAccount] = useState(null);
-  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -326,12 +306,6 @@ const Dashboard = () => {
     const accountResult = await helper.sendGet('/account');
     if (accountResult.account) {
       setAccount(accountResult.account);
-    }
-
-    // Load user stats
-    const statsResult = await helper.sendGet('/api/stats');
-    if (statsResult.stats) {
-      setStats(statsResult.stats);
     }
 
     // Load my rooms
@@ -389,8 +363,6 @@ const Dashboard = () => {
           <h1>Welcome back, {account?.username}!</h1>
           <p className="welcome-subtitle">Get to real-time doodling with your round up!</p>
         </div>
-
-        <StatsCard stats={stats} />
 
         <div className="tabs-container">
           <div className="tabs-header">
